@@ -31,4 +31,13 @@ CREATE TABLE IF NOT EXISTS `users_logs` (
   `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `ip` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=0 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=0;
+
+CREATE TABLE `pastes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` text,
+  `userid` int(12) NOT NULL,
+  `paste` mediumtext NOT NULL,
+  `iv` tinytext NOT NULL,
+  KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=315 DEFAULT CHARSET=latin1;
