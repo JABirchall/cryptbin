@@ -6,7 +6,7 @@ License:       Creative Commons Attribution-ShareAlike 3.0 Unported License
                 - http://creativecommons.org/licenses/by-sa/3.0/
 */
 /* Include Class */
-include("assets/member.inc.php");
+include("include/member.inc.php");
 $member->LoggedIn();
 
 /* This is just for an example */

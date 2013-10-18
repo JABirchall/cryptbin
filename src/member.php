@@ -5,7 +5,7 @@ Member Page
 **********
 */
 /* Include Code */
-include("assets/member.inc.php");
+include("include/member.inc.php");
 /* Is an Action set? */
 if(isset($_GET['action'])) {
 	$action = $_GET['action'];
