@@ -63,7 +63,6 @@ class member {
         }
         return $diff === 0; 
     }
-
 	public function validate_password($password, $good_hash)
     {
         $params = explode(":", $good_hash);
@@ -76,7 +75,7 @@ class member {
     	   	return $this->slow_equals($pbkdf2,$this->pbkdf2($params[HASH_ALGORITHM_INDEX],$password,$params[HASH_SALT_INDEX],(int)$params[HASH_ITERATION_INDEX],strlen($pbkdf2),true));   	
         }
     }
-
+    // Hash the password
     private function pbkdf2($algorithm, $password, $salt, $count, $key_length, $raw_output = false)
     {
         $algorithm = strtolower($algorithm);
@@ -144,27 +143,33 @@ class member {
 			/* Is both Username and Password set? */
 			if($username && $password) {
 				/* Get User data */
-				$database->query('SELECT id, password FROM users WHERE username = :username', array(':username' => $username));
+				$database->query('SELECT id, password, banned FROM users WHERE username = :username', array(':username' => $username));
 				/* Check if user exist */
 				if($database->count() >= '1') {
 					/* Get the users info */
 					$user = $database->statement->fetch(PDO::FETCH_OBJ);
 					/* Check hash */
 					if($this->validate_password($password, $user->password) == true) {
-						/* If correct create session */
-						session_regenerate_id();
-						$_SESSION['member_id'] = $user->id;
-						$_SESSION['member_valid'] = 1;
-						/* User Rember me feature? */
-						$this->createNewCookie($user->id);
-						/* Log */
-						$this->userLogger($user->id, 0);
-						/* Report Status */
-						$message = "Authentication Success";
-						$message_type = 2;
-						$return_form = 0;
-						/* Redirect */
-						echo '<meta http-equiv="refresh" content="2;url=index.php" />';
+						if($user->banned > 0){
+							$message = "Your accounts has been banned!";
+							$message_type = 1;
+							$return_form = 0;
+						} else {
+							/* If correct create session */
+							session_regenerate_id();
+							$_SESSION['member_id'] = $user->id;
+							$_SESSION['member_valid'] = 1;
+							/* User Rember me feature? */
+							$this->createNewCookie($user->id);
+							/* Log */
+							$this->userLogger($user->id, 0);
+							/* Report Status */
+							$message = "Authentication Success";
+							$message_type = 2;
+							$return_form = 0;
+							/* Redirect */
+							echo '<meta http-equiv="refresh" content="2;url=index.php" />';
+						}
 					} else {
 						/* Report Status */
 						$message = "Authentication Failed";
