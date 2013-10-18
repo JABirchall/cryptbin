@@ -37,16 +37,22 @@ class submit_paste {
 
 	}
 
-	public function grabpaste($pasteid,$iv,$key){
+	public function grabpaste($pasteid,$iv,$key = null){
 		global $database;
-		$database->query("SELECT paste FROM pastes WHERE iv = :iv AND id = :id LIMIT 0, 1;",
+		$database->query("SELECT paste, title FROM pastes WHERE iv = :iv AND id = :id LIMIT 0, 1;",
 			array(':iv' => $iv,
 			 ':id' => $pasteid
 			 	));
 		if($database->count() >= '1') {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
 			//echo $data->paste."</br>";
-			echo $this->decrypt_paste($data->paste,$key,$iv);
+			if (null == $key) {
+				echo "</br>You did no supply a key, Decryption was not attempted.";
+			} else {
+				$d = $this->decrypt_paste($data->paste,$key,$iv);
+				echo "</br>title: ".$data->title. "</br>text: ".$d;
+			}
+
 			return;
 		} else {
 			$err = "E1";
