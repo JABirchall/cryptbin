@@ -1,10 +1,4 @@
 <?php
-/*
-Name:          Member Login
-Author:        FireDart
-License:       Creative Commons Attribution-ShareAlike 3.0 Unported License
-                - http://creativecommons.org/licenses/by-sa/3.0/
-*/
 /* Include Class */
 include("include/member.inc.php");
 $member->LoggedIn();
