@@ -1,5 +1,4 @@
 <?php
-
 /* Member Class */
 class member {
 	/* Simple Variables */
@@ -8,13 +7,13 @@ class member {
 	private $email_master = null;
 	private $email_welcome = false;
 	private $email_verification = false;
-	private $bcryptRounds = 12;
+	//private $bcryptRounds = 12;
 	/* Needed Member Stuff */
 	function __construct() {
 		/* Prevent JavaScript from reaidng Session cookies */
 		ini_set('session.cookie_httponly', true);
 		/* Start Session */
-		session_start();
+		@session_start();
 		/* Check if last session is fromt he same pc */
 		if(!isset($_SESSION['last_ip'])) {
 			$_SESSION['last_ip'] = $_SERVER['REMOTE_ADDR'];
@@ -44,39 +43,66 @@ class member {
 		$currentPage .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
 		return $currentPage;
 	}
-	/* Gen Salt */
-	public function genSalt() {
-		/* openssl_random_pseudo_bytes(16) Fallback */
-		$seed = '';
-		for($i = 0; $i < 16; $i++) {
-			$seed .= chr(mt_rand(0, 255));
-		}
-		/* GenSalt */
-		$salt = substr(strtr(base64_encode($seed), '+', '.'), 0, 22);
-		/* Return */
-		return $salt;
-	}
-	/* Gen Password */
-	public function genHash($salt, $password) {
-		/* Explain '$2y$' . $this->rounds . '$' */
-			/* 2a selects bcrypt algorithm */
-			/* $this->rounds is the workload factor */
-		/* GenHash */
-		$hash = crypt($password, '$2y$' . $this->bcryptRounds . '$' . $this->genSalt());
-		/* Return */
-		return $hash;
-	}
-	/* Verify Password */
-	public function verify($password, $existingHash) {
-		/* Hash new password with old hash */
-		$hash = crypt($password, $existingHash);
-		/* Do Hashs match? */
-		if($hash === $existingHash) {
-			return true;
-		} else {
-			return false;
-		}
-	}
+
+	public function create_hash($password){
+        if (function_exists("hash_pbkdf2")) {
+            return PBKDF2_HASH_ALGORITHM . ":" . PBKDF2_ITERATIONS . ":" .  Salt . ":" . 
+            base64_encode(hash_pbkdf2(PBKDF2_HASH_ALGORITHM,$password,Salt,PBKDF2_ITERATIONS,PBKDF2_HASH_BYTES,true));
+        } else {
+            return PBKDF2_HASH_ALGORITHM . ":" . PBKDF2_ITERATIONS . ":" .  Salt . ":" . 
+            base64_encode($this->pbkdf2(PBKDF2_HASH_ALGORITHM,$password,Salt,PBKDF2_ITERATIONS,PBKDF2_HASH_BYTES,true));
+        }
+    }
+
+	private function slow_equals($a, $b)
+    {
+        $diff = strlen($a) ^ strlen($b);
+        for($i = 0; $i < strlen($a) && $i < strlen($b); $i++)
+        {
+            $diff |= ord($a[$i]) ^ ord($b[$i]);
+        }
+        return $diff === 0; 
+    }
+
+	public function validate_password($password, $good_hash)
+    {
+        $params = explode(":", $good_hash);
+        if(count($params) < HASH_SECTIONS)
+           return false; 
+        $pbkdf2 = base64_decode($params[HASH_PBKDF2_INDEX]);
+        if (function_exists("hash_pbkdf2")) {
+        	return $this->slow_equals($pbkdf2,hash_pbkdf2($params[HASH_ALGORITHM_INDEX],$password,$params[HASH_SALT_INDEX],(int)$params[HASH_ITERATION_INDEX],strlen($pbkdf2),true));
+        } else {
+    	   	return $this->slow_equals($pbkdf2,$this->pbkdf2($params[HASH_ALGORITHM_INDEX],$password,$params[HASH_SALT_INDEX],(int)$params[HASH_ITERATION_INDEX],strlen($pbkdf2),true));   	
+        }
+    }
+
+    private function pbkdf2($algorithm, $password, $salt, $count, $key_length, $raw_output = false)
+    {
+        $algorithm = strtolower($algorithm);
+        if(!in_array($algorithm, hash_algos(), true)) die('PBKDF2 ERROR: Invalid hash algorithm.');
+        if($count <= 0 || $key_length <= 0) die('PBKDF2 ERROR: Invalid parameters.');
+    
+        $hash_length = strlen(hash($algorithm, "", true));
+        $block_count = ceil($key_length / $hash_length);
+        $output = "";
+        for($i = 1; $i <= $block_count; $i++) {
+            // $i encoded as 4 bytes, big endian.
+            $last = $salt . pack("N", $i);
+            // first iteration
+            $last = $xorsum = hash_hmac($algorithm, $last, $password, true);
+            // perform the other $count - 1 iterations
+            for ($j = 1; $j < $count; $j++) {
+                $xorsum ^= ($last = hash_hmac($algorithm, $last, $password, true));
+            }
+            $output .= $xorsum;
+        }
+        if($raw_output)
+            return substr($output, 0, $key_length);
+        else
+            return bin2hex(substr($output, 0, $key_length));
+    }
+
 	/* Login */
 	public function login() {
 		global $database;
@@ -124,7 +150,7 @@ class member {
 					/* Get the users info */
 					$user = $database->statement->fetch(PDO::FETCH_OBJ);
 					/* Check hash */
-					if($this->verify($password, $user->password) == true) {
+					if($this->validate_password($password, $user->password) == true) {
 						/* If correct create session */
 						session_regenerate_id();
 						$_SESSION['member_id'] = $user->id;
@@ -271,7 +297,7 @@ class member {
 		/* User Rember me feature? */
 		if($this->remember == true) {
 			/* Gen new Hash */
-			$hash = $this->genHash($this->genSalt(), $_SERVER['REMOTE_ADDR']);
+			$hash = $this->create_hash(/*$this->genSalt(), */$_SERVER['REMOTE_ADDR']);
 			/* Set Cookies */
 			setcookie("remember_me_id", $id, time() + 31536000);  /* expire in 1 year */
 			setcookie("remember_me_hash", $hash, time() + 31536000);  /* expire in 1 year */
@@ -449,7 +475,7 @@ class member {
 			if(!isset($error)) {
 				$return_form = 0;
 				/* Final Format */
-				$password = $this->genHash($this->genSalt(), $password);
+				$password = $this->create_hash(/*$this->genSalt(), */$password);
 				/* Send the user a welcome E-Mail */
 				if($this->email_welcome == true) {
 					/* Send the user an E-Mail */
@@ -639,7 +665,7 @@ class member {
 					/* Send it */
 					if(mail($user->email, $subject, $body, $headers)) {
 						/* Upadte password only if you can mail them it! */
-						$database->query('UPDATE users SET password = :password WHERE email = :email', array(':password' => $this->genHash($this->genSalt(), $temp_password), ':email' => $_POST['email']));
+						$database->query('UPDATE users SET password = :password WHERE email = :email', array(':password' => $this->create_hash(/*$this->genSalt(),*/ $temp_password), ':email' => $_POST['email']));
 						$this->userLogger($user_id, 2);
 						$success[] = 'Please check your e-mail';
 						$return_form = 0;
@@ -711,7 +737,7 @@ class member {
 				} else {
 					$id = $_COOKIE['remember_me_id'];
 				}
-				$password = $this->genHash($this->genSalt(), $password);
+				$password = $this->create_hash(/*$this->genSalt(),*/ $password);
 				$database->query('UPDATE users SET password = :password, reset = 0 WHERE id = :id', array(':password' => $password, ':id' => $id));
 				$this->userLogger($user_id, 3);
 				/* Report Status */
@@ -795,7 +821,7 @@ class member {
 				} else {
 					$id = $_COOKIE['remember_me_id'];
 				}
-				$password = $this->genHash($this->genSalt(), $password);
+				$password = $this->create_hash(/*$this->genSalt(), */$password);
 				$database->query('UPDATE users SET password = :password WHERE id = :id', array(':password' => $password, ':id' => $id));
 				$this->userLogger($id, 3);
 				/* Report Status */
