@@ -25,8 +25,8 @@ class submit_paste {
 			array(':title' => $title, ':iv' => $sections[2]));
 		if($database->count() === 1) {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
-			echo "</br>You can view your paste with the following link</br>
-				<a href=\"".$member->currentPath()."paste.php?action=getpaste&id=".$data->id."&iv=".$sections[2]."&key=".$sections[0]."\"/>Here</a></br>";
+			echo '</br>You can view your paste with the following link</br>
+				<a href="'.$member->currentPath().'paste.php?action=getpaste&id='.$data->id.'&iv='.$sections[2].'&key='.$sections[0].'\"/>Here</a></br>';
 		} else echo "</br>Database error</br> iv :".$iv." key: ".key;
 		return;
 	}
@@ -52,13 +52,15 @@ class submit_paste {
 				echo "</br>You did no supply a key, Decryption was not attempted.";
 			} else {
 				$d = $this->decrypt_paste($data->paste,$key,$iv);
-				echo "</br>title: ".$data->title. "</br>text: ".$d;
+				$return = $data->title."EPIC SEPERATOR".$d;
+				
 			}
-			return;
+			
 		} else {
 			$err = "E1";
 			return $err;
 		}
+		return $return;
 	}
 
 	private function decrypt_paste($encrypted_paste, $key, $iv){
