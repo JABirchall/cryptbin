@@ -16,16 +16,17 @@ class submit_paste {
 		global $database;
 		global $member;
 		$sections = explode(":",$this->crypt_paste($paste));
-		//echo "Key: ".$sections[0]." </br>Encryted text: ".$sections[1]." </br>IV: ".$sections[2];
+		echo "Key: ".$sections[0]."</br>Encryted text: ".$sections[1]."</br>IV: ".$sections[2];
 
 		$database->query("INSERT INTO pastes (title, userid, paste, iv) VALUES (:title, :userid, :paste, :iv);",
 			array(':title' => $title, ':userid' => $userid, ':paste' => $sections[1], ':iv' => $sections[2]));
 
-		$database->query("SELECT id, iv, key FROM pastes WHERE title = :title AND iv = :iv LIMIT 0, 1;",array(':title' => $title, ':iv' => $sections[2]));
-		if($database->count() == 1) {
+		$database->query("SELECT id FROM pastes WHERE title = :title AND iv = :iv LIMIT 0, 1;",
+			array(':title' => $title, ':iv' => $sections[2]));
+		if($database->count() === 1) {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
-			echo "You can view your paste with the following link</br>
-				<a href=\"".$member->currentPath()."paste.php?action=getpaste&iv=".$data->iv."&id=".$data->id."&key=".$data->key."\"/>Here</a></br>";
+			echo "</br>You can view your paste with the following link</br>
+				<a href=\"".$member->currentPath()."paste.php?action=getpaste&id=".$data->id."&iv=".$sections[2]."&key=".$sections[0]."\"/>Here</a></br>";
 		} else echo "</br>Database error</br>";
 		return;
 	}
@@ -44,16 +45,16 @@ class submit_paste {
 		global $database;
 		$database->query("SELECT paste, title FROM pastes WHERE iv = :iv AND id = :id LIMIT 0, 1;",
 			array(':iv' => $iv, ':id' => $pasteid));
-		if($database->count() >= '1') {
+
+		if($database->count() === 1) {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
-			//echo $data->paste."</br>";
-			if (null == $key) {
+			echo $data->paste."</br>";
+			if (null === $key) {
 				echo "</br>You did no supply a key, Decryption was not attempted.";
 			} else {
 				$d = $this->decrypt_paste($data->paste,$key,$iv);
 				echo "</br>title: ".$data->title. "</br>text: ".$d;
 			}
-
 			return;
 		} else {
 			$err = "E1";
