@@ -13,15 +13,15 @@ if ($action == 'submit') {
 	$data = (isset($_POST['paste']))?$_POST['paste']:'E99_ND';
 	if($data === 'E99_ND') echo "No data was submited";
 	else $submit->submitpaste($title,$data);
-	echo $title,$data;
+
 } elseif ($action == 'getpaste'){
 	$iv = (isset($_GET['iv']))?$_GET['iv']:'';
 	$id = (isset($_GET['id']))?$_GET['id']:'';
 	$key = (isset($_GET['key']))?$_GET['key']:null;
 	$key = str_replace(" ", "+", $key);
+	$iv = str_replace(" ", "+", $iv);
 	if (null === @$key){
 		$paste = $submit->grabpaste($id,$iv);
-		echo "Does not have key";
 		if ($paste === "E10") {
 			echo "You are not logged in";
 		} elseif ($paste === "E1") {
@@ -31,10 +31,10 @@ if ($action == 'submit') {
 	} else {
 
 		$paste = $submit->grabpaste($id,$iv,$key);
-		echo "has key";
 		if ($paste === "E10") {
 			echo "You are not logged in";
 		} elseif ($paste === "E1") {
+
 			echo "Database error";
 		}
 	}

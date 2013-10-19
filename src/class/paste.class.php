@@ -3,12 +3,12 @@
 class submit_paste {
 	private function crypt_paste($paste){
 			$cipher = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB,'');
-			$key 	= base64_encode(mcrypt_create_iv(22, MCRYPT_DEV_URANDOM));
-			$iv 	= base64_encode(mcrypt_create_iv(22, MCRYPT_DEV_URANDOM));
+			$key 	= mcrypt_create_iv(32, MCRYPT_DEV_URANDOM);
+			$iv 	= mcrypt_create_iv(32, MCRYPT_DEV_URANDOM);
 			mcrypt_generic_init($cipher, $key, $iv);
 			$encrypted = mcrypt_generic($cipher,$paste);
 			mcrypt_generic_deinit($cipher);
-			$return = $key.":".base64_encode($encrypted).":".$iv;
+			$return = base64_encode($key).":".base64_encode($encrypted).":".base64_encode($iv);
 		return $return;
 	}
 
@@ -27,7 +27,7 @@ class submit_paste {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
 			echo "</br>You can view your paste with the following link</br>
 				<a href=\"".$member->currentPath()."paste.php?action=getpaste&id=".$data->id."&iv=".$sections[2]."&key=".$sections[0]."\"/>Here</a></br>";
-		} else echo "</br>Database error</br>";
+		} else echo "</br>Database error</br> iv :".$iv." key: ".key;
 		return;
 	}
 
@@ -48,7 +48,6 @@ class submit_paste {
 
 		if($database->count() === 1) {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
-			echo $data->paste."</br>";
 			if (null === $key) {
 				echo "</br>You did no supply a key, Decryption was not attempted.";
 			} else {
@@ -62,12 +61,12 @@ class submit_paste {
 		}
 	}
 
-	private function decrypt_paste($encrypted_paste,$key,$iv){
+	private function decrypt_paste($encrypted_paste, $key, $iv){
 		$cipher = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB,'');
-		mcrypt_generic_init($cipher, $key, $iv);
+		mcrypt_generic_init($cipher, base64_decode($key), base64_decode($iv));
 		$decrypted = mdecrypt_generic($cipher,base64_decode($encrypted_paste));
 		mcrypt_generic_deinit($cipher);
-		$last_char=substr($decrypted,-1);
+		//$last_char=substr($decrypted,-1);
 		return $decrypted;
 	}
 }
