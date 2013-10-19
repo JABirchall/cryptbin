@@ -8,28 +8,29 @@ class submit_paste {
 			mcrypt_generic_init($cipher, $key, $iv);
 			$encrypted = mcrypt_generic($cipher,$paste);
 			mcrypt_generic_deinit($cipher);
-			$return = base64_encode($key).":".base64_encode($encrypted).":".base64_encode($iv);
+			$return = array('key' => base64_encode($key), 'paste' => base64_encode($encrypted), 'iv' => base64_encode($iv));
 		return $return;
 	}
 
 	private function submitpastesql($title, $paste, $userid) {
 		global $database;
 		global $member;
-		$sections = explode(":",$this->crypt_paste($paste));
-		echo "Key: ".$sections[0].":".$sections[2]."</br>Encryted text: ".$sections[1];
+		$encrypted = $this->crypt_paste($paste);
+		$encrypted['key'] = $encrypted['key'].":".$encrypted['iv'];
+		echo "Key: ".$encrypted['key']."</br>Encryted text: <textarea>".$encrypted['paste']."</textarea>";
 
 		//$database->query("INSERT INTO pastes (title, userid, paste, iv) VALUES (:title, :userid, :paste, :iv);",
 		//	array(':title' => $title, ':userid' => $userid, ':paste' => $sections[1], ':iv' => $sections[2]));
 
 		$database->query("INSERT INTO pastes (title, userid, paste) VALUES (:title, :userid, :paste);",
-			array(':title' => $title, ':userid' => $userid, ':paste' => $sections[1]));
+			array(':title' => $title, ':userid' => $userid, ':paste' => $encrypted['paste']));
 
 		$database->query("SELECT id FROM pastes WHERE title = :title AND paste = :paste LIMIT 0, 1;",
-			array(':title' => $title, ':paste' => $sections[1]));
+			array(':title' => $title, ':paste' => $encrypted['paste']));
 		if($database->count() === 1) {
 			$data = $database->statement->fetch(PDO::FETCH_OBJ);
 			echo '</br>You can view your paste with the following link</br>
-				<a href="'.$member->currentPath().'paste.php?action=getpaste&id='.$data->id.'&key='.$sections[2].':'.$sections[0].'\"/>Here</a></br>';
+				<a href="'.$member->currentPath().'paste.php?action=getpaste&id='.$data->id.'&key='.$encrypted['key'].'\"/>Here</a></br>';
 		} else echo "</br>Database error</br>";
 		return;
 	}
