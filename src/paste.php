@@ -16,14 +16,15 @@ if (@$action == 'submit') {
 	else $submit->submitpaste($title,$data);
 
 } elseif (@$action == 'getpaste'){
-	$iv = (isset($_GET['iv']))?$_GET['iv']:'';
+	//$iv = (isset($_GET['iv']))?$_GET['iv']:'';
 	$id = (isset($_GET['id']))?$_GET['id']:'';
 	$key = (isset($_GET['key']))?$_GET['key']:null;
 	$key = str_replace(" ", "+", $key);
-	$iv = str_replace(" ", "+", $iv);
+	//$iv = str_replace(" ", "+", $iv);
+	$key = explode(":", $key);
+	//echo "Key: ".$key[0]."</br>IV: ".$key[1];
 	if (null === @$key){
-		$paste = $submit->grabpaste($id,$iv);
-		echo "Title: ".$paste[0]."</br>Text: ".$paste[1];
+		$paste = $submit->grabpaste($id,$key[0]);
 		if ($paste === "E10") {
 			echo "You are not logged in";
 		} elseif ($paste === "E1") {
@@ -32,12 +33,12 @@ if (@$action == 'submit') {
 
 	} else {
 
-		$paste = $submit->grabpaste($id,$iv,$key);
+		$paste = $submit->grabpaste($id,$key[0],$key[1]);
 		if ($paste === "E10") {
 			echo "You are not logged in";
 		} elseif ($paste === "E1") {
 
-			echo "Database error";
+			echo "Database error 2";
 		} else {
 			$paste = explode("EPIC SEPERATOR", $paste);
 			echo "Title: ".htmlentities($paste[0])."</br>Text: <textarea style=\"width: 1280px; height: 470px;\">".htmlentities($paste[1])."</textarea>";
