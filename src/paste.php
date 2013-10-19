@@ -33,15 +33,14 @@ if (@$action == 'submit') {
 
 	} else {
 
-		$paste = $submit->grabpaste($id,$key[0],$key[1]);
+		$paste = $submit->grabpaste($id,$key[1],$key[0]);
 		if ($paste === "E10") {
 			echo "You are not logged in";
 		} elseif ($paste === "E1") {
 
 			echo "Database error 2";
 		} else {
-			$paste = explode("EPIC SEPERATOR", $paste);
-			echo "Title: ".htmlentities($paste[0])."</br>Text: <textarea style=\"width: 1280px; height: 470px;\">".htmlentities($paste[1])."</textarea>";
+			echo "Title: ".htmlentities($paste['title'])."</br>Text: <textarea style=\"width: 1280px; height: 470px;\">".htmlentities($paste['paste'])."</textarea>";
 		}
 	}
 }

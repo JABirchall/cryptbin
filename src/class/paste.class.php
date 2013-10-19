@@ -56,8 +56,7 @@ class submit_paste {
 				echo "</br>You did no supply a key, Decryption was not attempted.";
 			} else {
 				$d = $this->decrypt_paste($data->paste,$key,$iv);
-				$return = $data->title."EPIC SEPERATOR".$d;
-				
+				$return = array('title' => $data->title, 'paste' => $d);
 			}
 			
 		} else {
