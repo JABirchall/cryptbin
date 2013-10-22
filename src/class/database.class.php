@@ -32,11 +32,17 @@ class database {
 		$this->statement = $this->pdo->prepare($query);
 		/* Execute Query */
 		$this->statement->execute($bind);
+
 	}
 	/* Return row Count */
 	public function count() {
 		/* Return Count */
 		$result = $this->statement->rowCount();
+		return $result;
+	}
+	/* return last id of paste */
+	public function lastid() {
+		$result	= $this->pdo->lastInsertId();
 		return $result;
 	}
 }
